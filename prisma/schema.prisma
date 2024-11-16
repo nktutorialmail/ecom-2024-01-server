@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // provider = "mysql"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String?
+  name      String?
+  picture   String?
+  role      String   @default("user")
+  enabled   Boolean  @default(true)
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Orders    Order[] // 
+  Carts     Cart[] // 
+}
+
+model Product {
+  id              Int              @id @default(autoincrement())
+  title           String
+  description     String
+  price           Float
+  soid            Int              @default(0)
+  quantity        Int
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  ProductOnOrders ProductOnOrder[] // orderItems
+  ProductOnCarts  ProductOnCart[] // cartItems
+  Images          Image[] // images
+  categoryId      Int
+  Category        Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade) // category
+}
+
+model Order {
+  id              Int              @id @default(autoincrement())
+  cartTotal       Float
+  orderStatus     String           @default("Not Process")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  ProductOnOrders ProductOnOrder[] // products
+  userId          Int // orderedById
+  User            User             @relation(fields: [userId], references: [id], onDelete: Cascade) // orderedBy
+  stripePaymentId String
+  amount          Int
+  status          String
+  currency        String
+}
+
+model ProductOnOrder {
+  id        Int     @id @default(autoincrement())
+  count     Int
+  price     Float
+  productId Int
+  Product   Product @relation(fields: [productId], references: [id], onDelete: Cascade) // product
+  orderId   Int
+  Order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade) // order
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  Products  Product[] // products
+}
+
+model Cart {
+  id             Int             @id @default(autoincrement())
+  cartTotal      Float
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  ProductOnCarts ProductOnCart[] // products
+  userId         Int // orderedById
+  User           User            @relation(fields: [userId], references: [id], onDelete: Cascade) // orderedBy
+}
+
+model ProductOnCart {
+  id        Int     @id @default(autoincrement())
+  count     Int
+  price     Float
+  cartId    Int
+  Cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade) // cart
+  productId Int
+  Product   Product @relation(fields: [productId], references: [id], onDelete: Cascade) // product and No onDelete
+}
+
+model Image {
+  id         Int      @id @default(autoincrement())
+  asset_id   String
+  public_id  String
+  url        String
+  secure_url String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  productId  Int
+  Product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade) // product
+}
